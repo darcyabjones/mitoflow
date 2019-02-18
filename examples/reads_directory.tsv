@@ -1,0 +1,4 @@
+sample	read1_file	read2_file
+one	fastq/pair1_R1.fastq.gz	fastq/pair1_R2.fastq.gz
+one	fastq/pair2_R1.fastq.gz	fastq/pair2_R2.fastq.gz
+two fastq/other_R1.fastq.gz	fastq/other_R2.fastq.gz

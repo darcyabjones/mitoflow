@@ -1,0 +1,4 @@
+sample	read1_file	read2_file	read_length	insert_size
+one	pair1_R1.fastq.gz	pair1_R2.fastq.gz	125	600
+one	pair2_R1.fastq.gz	pair2_R2.fastq.gz	125	600
+two other_R1.fastq.gz	other_R2.fastq.gz	150	320
