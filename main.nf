@@ -58,6 +58,7 @@ if ( params.asm_table ) {
         .map { [it.sample, file(it.read1_file), file(it.read2_file), it.read_length, it.insert_size] }
 } else {
     log.info "Hey I need some reads to assemble into a mitochondrial genome."
+    exit 1
 }
 
 if ( params.filter_table ) {
@@ -75,6 +76,8 @@ if ( params.filter_table ) {
 
 if ( params.reference ) {
     reference = Channel.fromPath(params.reference, checkIfExists: true, type: "file")
+        .collectFile(name: 'reference.fasta', newLine: true, sort: "deep")
+        .first()
 } else {
     log.info "Hey I need a mitochondrial reference."
     exit 1
@@ -83,22 +86,16 @@ if ( params.reference ) {
 
 if ( params.seed ) {
     seed = Channel.fromPath(params.seed, checkIfExists: true, type: "file")
+        .collectFile(name: 'seed.fasta', newLine: true, sort: "deep")
+        .first()
 } else if ( params.reference ) {
-    seed = Channel.fromPath(params.reference, checkIfExists: true, type: "file")
+    seed = reference
 } else {
     log.info "Hey I need some fasta sequences to seed the mitochondrial assembly from."
     exit 1
 }
 
 // END OF PARAMETER VALIDATION
-
-
-reference.into {
-    reference4AssembleMito;
-    reference4Alignment;
-    reference4ReadFiltering;
-    reference4MergedReadFiltering;
-}
 
 
 process assembleMito {
@@ -112,13 +109,15 @@ process assembleMito {
     tag { name }
 
     input:
-    file ref from reference4AssembleMito
+    file "ref.fasta" from reference
+    file "seed.fasta" from seed
     set val(name), file("*R1.fastq.gz"), file("*R2.fastq.gz"),
         val(read_length), val(insert_size) from asmTable
             .groupTuple(by: 0)
 
     output:
-    set val(name), file("${name}_mitochondrial.fasta"), file("${name}_log.txt") into mitoAssemblies
+    set val(name), file("${name}_mitochondrial.fasta"),
+        file("${name}_log.txt") into mitoAssemblies
 
     script:
 
@@ -147,8 +146,8 @@ Genome Range          = ${params.min_size}-${params.max_size}
 K-mer                 = ${params.kmer}
 Extended log          = 0
 Save assembled reads  = no
-Seed Input            = ${ref}
-Reference sequence    = ${ref}
+Seed Input            = seed.fasta
+Reference sequence    = ref.fasta
 Variance detection    = no
 
 Dataset 1:
@@ -200,7 +199,7 @@ process alignGenomes {
     tag { name }
 
     input:
-    file ref from reference4Alignment
+    file "ref.fasta" from reference
     set val(name), file(asm), file(stats) from mitoAssemblies4Alignment
 
     output:
@@ -216,7 +215,7 @@ process alignGenomes {
     file "${name}.unqry" optional true into unqrys
 
     """
-    nucmer --prefix="${name}" "${ref}" "${asm}"
+    nucmer --prefix="${name}" "ref.fasta" "${asm}"
     dnadiff --prefix="${name}" --delta "${name}.delta"
     """
 }
@@ -237,10 +236,10 @@ if ( params.filter_table ) {
         tag { name }
 
         input:
-        file ref from reference4ReadFiltering
+        file "ref.fasta" from reference
         set val(name), val(base_name), val(read1_name), val(read2_name),
             val(read1_simplename), val(read2_simplename),
-            file("fwd"), file("rev"), file(asm) from joined4ReadFiltering
+            file("fwd"), file("rev"), file("asm.fasta") from joined4ReadFiltering
 
         output:
         set val(name), file(read1_name), file(read2_name) into filteredReads
@@ -258,8 +257,8 @@ if ( params.filter_table ) {
         bbsplit.sh \
             -Xmx${task.memory.toGiga()}g \
             t=${task.cpus} \
-            ref_${ref.simpleName}="${ref}" \
-            ref_${name}="${asm}" \
+            ref_ref="ref.fasta" \
+            ref_${name}="asm.fasta" \
             in1="\${FWD}" \
             in2="\${REV}" \
             outu1="${read1_name}" \
@@ -289,9 +288,9 @@ if ( params.filter_table ) {
         tag { name }
 
         input:
-        file ref from reference4MergedReadFiltering
+        file "ref.fasta" from reference
         set val(name), val(reads_name), val(reads_simplename),
-            file("reads"), file(asm) from joined4MergedReadFiltering
+            file("reads"), file("asm.fasta") from joined4MergedReadFiltering
 
         output:
         set val(name), file(reads_name) into filteredMergedReads
@@ -306,13 +305,16 @@ if ( params.filter_table ) {
         bbsplit.sh \
             -Xmx${task.memory.toGiga()}g \
             t=${task.cpus} \
-            ref_${ref.simpleName}="${ref}" \
-            ref_${name}="${asm}" \
+            ref_ref="ref.fasta" \
+            ref_${name}="asm.fasta" \
             in="\${READS}" \
             outu="${reads_name}" \
             outm="${reads_simplename}_mitochondrial.fastq.gz" \
             scafstats="${reads_simplename}_scafstats.txt" \
             refstats="${reads_simplename}_refstats.txt"
+
+        # Remove the index because not needed
+        rm -rf -- ref
         """
     }
 }
