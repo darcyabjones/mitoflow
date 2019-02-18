@@ -34,40 +34,54 @@ def helpMessage() {
     ```
 
     ## Mandatory Arguments
+    
+    ```
+    param                   | description
+    ---------------------------------------------------------------------------
+    `--asm_table <tsv>`     | A table mapping fastq read pairs to samples
+                            | (See Tables section).
 
-      --asm_table     A table mapping fastq read pairs to samples (See 
-                      Tables section).
+    `--reference <fasta>`   | A fasta formatted reference mitochondrial
+                            | assembly from a closely related isolate.
+                            | Multiple files can be provided using glob
+                            | patterns.
 
-      --reference     A fasta formatted reference mitochondrial assembly from
-                      a closely related isolate. Multiple files can be 
-                      provided using glob patterns.
+    `--read_length <int>`   | The length of the fastq reads. This can also
+                            | be provided in the tsv provided by
+                            | `--asm_table` (See Tables section).
 
-      --read_length   The length of the fastq reads. This can also be 
-                      provided in the tsv provided by `--asm_table` (See 
-                      Tables section).
-
-      --insert_length The insert size of the fastq pairs. This can also be
-                      provided in the tsv provided by `--asm_table` (See
-                      Tables section).
+    `--insert_length <int>` | The insert size of the fastq pairs. This can
+                            | also be provided in the tsv provided by
+                            |`--asm_table` (See Tables section).
+    ```
 
     ## Options
-      --filter_table  A table of reads to filter with their corresponding
-                      samples (See tables section). If not provided will skip
-                      read filtering steps.
 
-      --seed          Fasta formatted sequences to seed the mitochondrial
-                      assembly. This could be a mitochondrial gene or assembly
-                      from a closely related isolate. Multiple fasta files can
-                      be specified using a glob pattern. (Default: `--reference`)
+    ```
+    param                  | default     | description
+    ---------------------------------------------------------------------------
+    `--filter_table <tsv>` | none        | A table of reads to filter with
+                           |             | their corresponding samples
+                           |             | (See tables section). If not
+                           |             | provided will skip read filtering
+                           |             | steps.
 
-      --min_size      The minimum size (bp) of the mitochondrial assemblies
-                      (Default: 12000).
+    `--seed <fasta>`       | --reference | Fasta formatted sequences to seed
+                           |             | the mitochondrial assembly. This
+                           |             | could be a mitochondrial gene or
+                           |             | assembly from a closely related
+                           |             | isolate. Multiple fasta files can
+                           |             | be specified using a glob pattern.
 
-      --max_size      The maximum size (bp) of the mitochondrial assemblies
-                      (Default: 100000).
+    `--min_size <int>`     | 12000       | The minimum size (bp) of the
+                           |             | mitochondrial assemblies.
 
-      --kmer          The K-mer size (bp) to use for the NOVOplasty assembly
-                      (Default: 39).
+    `--max_size <int>`     | 100000      | The maximum size (bp) of the
+                           |             | mitochondrial assemblies
+
+    `--kmer <int>`         | 39          | The K-mer size (bp) to use for the
+                           |             | NOVOplasty assembly
+    ```
 
     ## Tables
 
@@ -96,25 +110,28 @@ def helpMessage() {
 
     ## Outputs
 
-      assemblies/*_mitochondrial.fasta The assembled mitochondria per sample. 
+    * `assemblies/*_mitochondrial.fasta`:
+        The assembled mitochondria per sample. 
 
-      assemblies/*_log.txt             Logs from NOVOPlasty for assemblies.
+    * `assemblies/*_log.txt`:
+        Logs from NOVOPlasty for assemblies.
 
-      alignments/*.{delta,mcoords,...} MUMmer files from alignment between
-                                       assemblies and `reference`.
+    * `alignments/*.{delta,mcoords,...}`:
+        MUMmer files from alignment between assemblies and `reference`.
 
-      filtered_reads/<sample>          Filtered fastq pairs named same as input.
+    * `filtered_reads/<sample>`:
+        Filtered fastq pairs named same as input.
 
-      filtered_reads/*_mitochondrial.fastq.gz Filtered fastq pairs aligning to
-                                       Mitochondria.
+    * `filtered_reads/*_mitochondrial.fastq.gz`:
+        Filtered fastq pairs aligning to Mitochondria.
 
-      filtered_reads/*_scafstats.txt   BBSplit statistics containing number of
-                                       reads aligned to different scaffolds.
+    * `filtered_reads/*_scafstats.txt`:
+        BBSplit statistics containing number of reads aligned to different
+        scaffolds.
 
-      filtered_reads/*_refstats.txt    BBSplit statistics containing number of
-                                       reads aligned to different references
-                                       (either `--reference` or assembly for
-                                       this sample).
+    * `filtered_reads/*_refstats.txt`:
+        BBSplit statistics containing number of reads aligned to different
+        references (either `--reference` or assembly for this sample).
     """.stripIndent()
 }
 
