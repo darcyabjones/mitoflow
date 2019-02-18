@@ -234,9 +234,7 @@ if ( !params.insert_size ) {
 
 
 process assembleMito {
-    label "posix"
     label "novoplasty"
-    label "perl"
     label "medium_task"
 
     publishDir "${params.outdir}/assemblies"
@@ -377,7 +375,6 @@ if ( params.filter_table ) {
 
     process readFiltering {
         label "bbmap"
-        label "java"
         label "biggish_task"
 
         publishDir "${params.outdir}/filtered_reads"
@@ -431,7 +428,6 @@ if ( params.filter_table ) {
         .join( mitoAssemblies4MergedReadFiltering.map { n, a, s -> [n, a] }, by: 0)
 
     process mergedReadFiltering {
-        label "bbmap"
         label "java"
         label "biggish_task"
 
