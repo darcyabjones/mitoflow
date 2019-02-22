@@ -73,6 +73,7 @@ param                  | default     | description
                        |             | NOVOplasty assembly
 ```
 
+
 ## Tables
 
 Because individual samples are often sequenced in multiple runs,
@@ -98,6 +99,7 @@ columns will be ignored. However, be aware that NOVOplasty can't use
 merged reads, so don't use your pre-filtered reads for the `--asm_table`.
 See the `examples` folder in the github repo for examples.
 
+
 ## Outputs
 
 * `assemblies/*_mitochondrial.fasta`:
@@ -122,3 +124,17 @@ See the `examples` folder in the github repo for examples.
 * `filtered_reads/*_refstats.txt`:
     BBSplit statistics containing number of reads aligned to different
     references (either `--reference` or assembly for this sample).
+
+
+## Requirements
+
+* `NOVOPlasty` <https://github.com/ndierckx/NOVOPlasty>.
+Developed with v2.7.2. NB the version in Conda is too old and will give
+an error about having "no input". You can currently download from
+<https://github.com/ndierckx/NOVOPlasty/raw/master/NOVOPlasty2.7.2.pl>, 
+and link it to somewhere on your `$PATH` as `NOVOPlasty.pl`.
+* `MUMmer` <https://github.com/mummer4/mummer>.
+Developed with v4.0.0beta2.
+* `BBMap` <https://sourceforge.net/projects/bbmap/>.
+Developed with v38.39 but bbsplit is generally fairly stable.
+(Optional, only required if filtering reads)
