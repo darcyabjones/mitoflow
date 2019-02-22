@@ -384,7 +384,8 @@ if ( params.filter_table ) {
     // We also join the mitochondrial assembly for this isolate into the channel.
     joined4ReadFiltering = pairTable
         .map { n, b, f, r -> [n, b, f.name, r.name, f.simpleName, r.simpleName, f, r] }
-        .join( mitoAssemblies4ReadFiltering.map { n, a, s -> [n, a] }, by: 0)
+        .combine( mitoAssemblies4ReadFiltering.map { n, a, s -> [n, a] }, by: 0 )
+        .view()
 
     process readFiltering {
         label "bbmap"
@@ -438,7 +439,7 @@ if ( params.filter_table ) {
     // As with `joined4ReadFiltering`, split out the read filenames and merge the assembly.
     joined4MergedReadFiltering = mergedTable
         .map { n, m -> [n, m.name, m.simpleName, m] }
-        .join( mitoAssemblies4MergedReadFiltering.map { n, a, s -> [n, a] }, by: 0)
+        .combine( mitoAssemblies4MergedReadFiltering.map { n, a, s -> [n, a] }, by: 0 )
 
     process mergedReadFiltering {
         label "java"
