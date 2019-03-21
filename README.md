@@ -4,6 +4,15 @@ A short and sweet pipeline for assembling mitochondria and filtering
 reads prior to genome assembly. Intended for use with Illumina paired
 reads.
 
+Note that in practice, I haven't really found a large difference between
+assemblies produced with or without filtering mitochondrial reads.
+That is, not with SPAdes in _Parastagonospora nodorum_.
+Given the small amount of mitochondrial sequence genuinely present in the
+nuclear genome (based on long read assemblies), I play it safe and assemble
+with the full read set. I then use these assemblies to fish out the
+mitochondrial contigs using [mashmap](https://github.com/marbl/MashMap).
+
+
 ## Usage
 
 ```bash
