@@ -75,6 +75,34 @@ def parse_paf(handle):
     return
 
 
+def format_missing(missing):
+    if len(missing) == 0:
+        return ""
+
+    missing = sorted(list(missing))
+    blocks = []
+
+    start = missing[0]
+    prev = start
+    for i in missing[1:]:
+        if i != prev + 1:
+            if prev == start:
+                block = str(start)
+            else:
+                block = "{}-{}".format(start, prev)
+            blocks.append(block)
+            start = i
+
+        prev = i
+
+    if prev == start:
+        block = str(start)
+    else:
+        block = "{}-{}".format(start, prev)
+    blocks.append(block)
+    return ",".join(blocks)
+
+
 def filter_paf(paf, cov):
     out = []
     candidates = defaultdict(list)
@@ -103,7 +131,7 @@ def filter_paf(paf, cov):
                 target_start=aln.target_start,
                 target_end=aln.target_end,
                 query_coverage=this_cov,
-                query_missing=",".join([str(i) for i in this_missing]),
+                query_missing=format_missing(this_missing),
                 is_filtered=is_filtered,
             )
             out.append(filt)

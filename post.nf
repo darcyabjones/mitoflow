@@ -10,6 +10,23 @@ def helpMessage() {
     # mitoflow - postprocessing
 
     Filter out mitochondrial contigs from an assembly.
+
+    ## Usage
+
+    ```bash
+    nextflow run -resume ./post.nf "*{_genomic,_mitochondrial}.fasta"
+    ```
+
+    Note that because of the way the glob works, you need something unique
+    in the bracket expansion for the pattern to match properly.
+    E.G. Say you had the files `genome.fasta` and `genome_mitochondrial.fasta`
+    the pattern, `*{,_mitochondrial}.fasta` doesn't work because
+    `genome_mitochondrial.fasta` will match twice.
+    It's annoying, but you might just have to rename your files. Sorry!
+
+    Requirements:
+    minimap2
+    Python3 with Biopython installed
     """.stripIndent()
 }
 
@@ -36,6 +53,10 @@ if ( params.genomes ) {
 }
 
 
+// Identity filtering is just done as part of the minimap alignment, rather
+// than filtering out the results.
+// I'll need to add some options here to customise, but the preset value works
+// pretty well.
 process align {
     label "minimap2"
     tag { name }
@@ -63,7 +84,7 @@ process filter {
     publishDir "${params.outdir}/filtered_assemblies"
 
     input:
-    set val(name), file("matches.paf"), file(asm) from alignedGenomes
+    set val(name), file("matches.paf"), file("genome.fasta") from alignedGenomes
 
     output:
     set val(name),
@@ -74,10 +95,10 @@ process filter {
     """
     filter_mitochondria.py \
       -i matches.paf \
-      -f ${asm} \
-      -g ${asm.baseName}_genomic.fasta \
-      -m ${asm.baseName}_mitochondrial.fasta \
-      -t ${asm.baseName}_matches.tsv \
+      -f genome.fasta \
+      -g ${name}_genomic.fasta \
+      -m ${name}_mitochondrial.fasta \
+      -t ${name}_matches.tsv \
       --coverage ${params.coverage}
     """
 }
