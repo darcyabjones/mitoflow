@@ -34,7 +34,7 @@ def helpMessage() {
     ```
 
     ## Mandatory Arguments
-    
+
     ```
     param                   | description
     ---------------------------------------------------------------------------
