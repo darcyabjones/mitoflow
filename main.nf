@@ -161,7 +161,7 @@ params.seed = false
 params.reference = false
 params.min_size = 12000
 params.max_size = 100000
-params.kmer = 39
+params.kmer = 61
 params.read_length = false
 params.insert_size = false
 
@@ -318,8 +318,8 @@ Reverse reads         = reverse.fastq.gz
 Optional:
 -----------------------
 Insert size auto      = yes
-Insert Range          = 1.8
-Insert Range strict   = 1.3
+Insert Range          = 1.6
+Insert Range strict   = 1.2
 Use Quality Scores    = no
 EOF
 
