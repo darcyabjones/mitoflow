@@ -2,8 +2,10 @@
 
 import sys
 import argparse
+from itertools import chain
 from collections import namedtuple
 from collections import defaultdict
+from statistics import median
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
 
@@ -28,6 +30,10 @@ PAF = namedtuple(
     ]
 )
 
+PBCov = namedtuple(
+    "PBCov",
+    ["seqid", "pos", "depth"]
+)
 
 Filtered = namedtuple(
     "Filtered",
@@ -72,6 +78,23 @@ def parse_paf(handle):
         row["remainder"] = sline[len(columns):]
 
         yield PAF(**row)
+    return
+
+
+def parse_pbcov(handle):
+    columns = [
+        ("seqid", str),
+        ("pos", int),
+        ("depth", int),
+    ]
+
+    for line in handle:
+        sline = line.strip().split("\t")
+        row = {}
+        for (col, fn), val in zip(columns, sline):
+            row[col] = fn(val)
+
+        yield PBCov(**row)
     return
 
 
@@ -139,10 +162,49 @@ def filter_paf(paf, cov):
     return out
 
 
+def coverages(pbcovs):
+    depth_dict = defaultdict(list)
+    for cov in pbcovs:
+        depth_dict[cov.seqid].append(cov.depth)
+    return depth_dict
+
+
+def coverage_medians(covs):
+    out = dict()
+    for seqid, depths in covs.items():
+        out[seqid] = median(depths)
+    return out
+
+
+def percentile(vec, p):
+    from math import floor
+    svec = sorted(vec)
+    index = floor(len(svec) * p)
+    return svec[index]
+
+
 def cli(prog, args):
     parser = argparse.ArgumentParser(
         prog=prog,
-        description="Renames fasta sequences using a sane format.",
+        description="""
+        Filters mitochondrial contigs from a genome assemblyusing contig
+        alignment and read coverage information.
+
+        Given an alignment (in paf format, e.g. from minimap2) between some
+        contigs and a mitochondrial genome assembly, and a per-base coverage
+        file e.g. from `bedtools genomecov -d -ibam my.bam` filters out
+        contigs based on alignment coverage of the contigs and the median read
+        depth coverage of the aligned reads. E.g. if contigs are almost
+        entirely contained within the mitochondrial genome, then that threshold
+        would pass. Then if the contig in question has higher median read
+        coverage than a specified percentile (ie. it is multicopy) then the
+        contig is filtered out.
+
+        Note that the contigs to filter should always be the query in the
+        minimap job (and the mitochondiral genome the reference).
+        Note also that things like percent identity etc are determined by the
+        aligners rather than us doing post-filtering.
+        """
     )
 
     parser.add_argument(
@@ -157,6 +219,13 @@ def cli(prog, args):
         type=argparse.FileType('r'),
         required=True,
         help="Input fasta file."
+    )
+
+    parser.add_argument(
+        "-p", "--per-base-cov",
+        type=argparse.FileType('r'),
+        required=True,
+        help="Per base coverage."
     )
 
     parser.add_argument(
@@ -187,7 +256,18 @@ def cli(prog, args):
         type=float,
         default=0.95,
         help=(
-            "The coverage of the shorter sequence required."
+            "The coverage of the contig sequence required."
+        )
+    )
+
+    parser.add_argument(
+        "-e", "--percentile",
+        type=float,
+        default=0.99,
+        help=(
+            "The median percentile of the read coverage required. "
+            "Generally, you'll want this value to be quite high "
+            "(e.g 0.99 - 0.999)."
         )
     )
 
@@ -211,9 +291,21 @@ def main():
     )
 
     paf = parse_paf(args.input)
+    pbcovs = coverages(parse_pbcov(args.per_base_cov))
+
+    total_pbcov = chain.from_iterable(pbcovs.values())
+    percentile_thres = percentile(total_pbcov, args.percentile)
+
+    pbcov_medians = coverage_medians(pbcovs)
+
     matches = filter_paf(paf, args.coverage)
 
-    to_exclude = {match.query for match in matches if match.is_filtered}
+    to_exclude = {
+        match.query
+        for match
+        in matches
+        if match.is_filtered and pbcov_medians[match.query] > percentile_thres
+    }
 
     genomic_seqs = []
     mito_seqs = []
@@ -238,13 +330,21 @@ def main():
         "query_coverage",
         "query_missing",
         "is_filtered",
+        "pbcov_median",
+        "pbcov_threshold"
     ]
 
     print("\t".join(columns), file=args.table)
     for match in matches:
-        print(
-            "\t".join([str(getattr(match, col)) for col in columns]),
-            file=args.table
+        args.table.write(
+            "\t".join([str(getattr(match, col)) for col in columns[:-3]]),
+        )
+        args.table.write(
+            "\t{}\t{}\t{}\n".format(
+                match.query in to_exclude,
+                pbcov_medians[match.query],
+                percentile_thres,
+            )
         )
     return
 
