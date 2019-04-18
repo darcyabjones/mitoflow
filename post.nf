@@ -55,7 +55,7 @@ if ( params.genomes ) {
 }
 
 
-genomes.into {
+genomes.view().into {
     genomes4Align;
     genomes4Coverage;
 }
@@ -70,7 +70,7 @@ process align {
     tag { name }
 
     input:
-    set val(name), file(asm), file(mito_asm), file(bam) from genomes4Align
+    set val(name), file(bam), file(asm), file(mito_asm) from genomes4Align
 
     output:
     set val(name), file("matches.paf"), file(asm) into alignedGenomes
@@ -89,7 +89,7 @@ process coverage {
     label "bedtools"
 
     input:
-    set val(name), file(asm), file(mito_asm), file(bam) from genomes4Coverage
+    set val(name), file(bam), file(asm), file(mito_asm) from genomes4Coverage
 
     output:
     set val(name), file("per_base_cov.tsv") into pbCoverages
